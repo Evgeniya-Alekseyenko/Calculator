@@ -73,7 +73,7 @@ body {
     color: var(--secondary-font-color);
 }
 .c,
-.signed,
+.square-root,
 .percent,
 .divide,
 .seven,
@@ -109,7 +109,7 @@ body {
     grid-area: c;
 }
 
-.signed {
+.square-root {
     grid-area: signed;
 }
 

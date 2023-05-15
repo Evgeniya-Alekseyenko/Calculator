@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import * as math from 'mathjs';
 
-// при нажатии на Enter несколько раз при каком-то готовом значении выдает ошибку на 56 строке
-
 const Calculator = () => {
     const [inputVal, setInputVal] = useState('');
     const operators = ['+', '-', 'x', '÷'];
@@ -10,10 +8,13 @@ const Calculator = () => {
 
     const handleKeyDown = (e) => {
         const key = e.key;
+
+        if (key === 'F12' || key === 'F11' || key === 'F10') {
+            return;
+        }
         if (/\d/.test(key)) {
             setInputVal(inputVal + key);
         } else if (key === '*' || key === '/' || key === '+' || key === '-') {
-            // } else if (operators.indexOf(key) > -1) {
             const lastChar = inputVal[inputVal.length - 1];
             if (inputVal !== '' && operators.indexOf(lastChar) === -1) {
                 setInputVal(inputVal + key);
@@ -24,8 +25,12 @@ const Calculator = () => {
                 setInputVal(newInputVal);
                 setDecimalAdded(newInputVal.includes('.'));
             }
-
-            if (operators.indexOf(lastChar) > -1 && inputVal.length > 1) {
+            if (
+                (operators.indexOf(lastChar) > -1 &&
+                    inputVal.length > 1 &&
+                    key === '+') ||
+                (lastChar === '*' && key === '/')
+            ) {
                 setInputVal(inputVal.replace(/.$/, key));
             }
             setDecimalAdded(false);
@@ -41,26 +46,8 @@ const Calculator = () => {
             } else {
                 setInputVal('');
             }
-            // try {
-            //     const newInputVal = inputVal.slice(0, -1);
-            //     setInputVal(newInputVal);
-            //     setDecimalAdded(newInputVal.includes('.'));
-            // } catch (error) {
-            //     console.error(error);
-            //     setInputVal('Invalid value');
-            //     // Обработка ошибки, например:
-            //     // setInputVal('');
-            //     setDecimalAdded(false);
-            // }
         } else if (key === 'Enter') {
             let equation = inputVal;
-            // const lastChar = equation[equation.length - 1];
-            // if (typeof equation === 'string') {
-            //     equation = equation.replace(/x/g, '*').replace(/÷/g, '/');
-            // }
-            // if (operators.indexOf(lastChar) > -1 || lastChar === '.') {
-            //     equation = equation.replace(/.$/, '');
-            // }
             try {
                 if (typeof equation === 'string') {
                     equation = equation.replace(/x/g, '*').replace(/÷/g, '/');
@@ -72,19 +59,14 @@ const Calculator = () => {
             } catch (error) {
                 console.error('An error occurred:', error);
             }
-
-            // if (equation.indexOf('/0') !== -1) {
-            //     setInputVal('Error: Division by zero');
-            //     return;
-            // }
             if (typeof equation === 'string' && equation.indexOf('/0') !== -1) {
                 setInputVal('Error: Division by zero');
                 return;
             }
             if (equation) {
-                console.log(typeof equation, equation);
                 setInputVal(math.evaluate(equation.toString()));
             }
+
             setDecimalAdded(false);
         } else if (key === 'Escape') {
             setInputVal('');
@@ -99,72 +81,57 @@ const Calculator = () => {
 
     const handleClick = (e) => {
         const btnVal = e.target.innerHTML;
+        const lastChar = inputVal[inputVal.length - 1];
 
-        if (btnVal === 'C') {
+        if (/[0-9]/.test(btnVal)) {
+            setInputVal(inputVal + btnVal);
+        } else if (btnVal === '.' && !decimalAdded) {
+            setInputVal(inputVal + btnVal);
+            setDecimalAdded(true);
+        } else if (operators.includes(btnVal)) {
+            if (/[0-9]/.test(lastChar)) {
+                setInputVal(inputVal + btnVal);
+            } else if (btnVal === '-' && inputVal === '') {
+                setInputVal(inputVal + btnVal);
+            } else if (operators.includes(lastChar) && inputVal.length > 1) {
+                setInputVal(inputVal.slice(0, -1) + btnVal);
+            }
+            setDecimalAdded(false);
+        } else if (btnVal === 'C') {
             setInputVal('');
             setDecimalAdded(false);
         } else if (btnVal === '=') {
-            let equation = inputVal;
-            const lastChar = equation[equation.length - 1];
-
-            // equation = equation.replace(/x/g, '*').replace(/÷/g, '/');
-            if (typeof equation === 'string') {
-                equation = equation.replace(/x/g, '*').replace(/÷/g, '/');
+            let equation = inputVal.replace(/x/g, '*').replace(/÷/g, '/');
+            if (operators.includes(lastChar) || lastChar === '.') {
+                equation = equation.slice(0, -1);
             }
-
-            if (operators.indexOf(lastChar) > -1 || lastChar === '.') {
-                equation = equation.replace(/.$/, '');
-            }
-
-            // if (equation.indexOf('/0') !== -1 || typeof equation === 'string') {
-            //     setInputVal('Invalid action');
-            //     return;
-            // }
-            // if (equation) {
-            //     setInputVal(math.evaluate(equation));
-            // }
             try {
-                if (equation) {
-                    setInputVal(math.evaluate(equation));
-                }
+                const result = math.evaluate(equation);
+                setInputVal(result.toString());
             } catch (error) {
-                setInputVal('Error');
+                setInputVal('Error: Invalid input');
             }
-
             setDecimalAdded(false);
-        } else if (operators.indexOf(btnVal) > -1) {
-            const lastChar = inputVal[inputVal.length - 1];
-
-            if (inputVal !== '' && operators.indexOf(lastChar) === -1) {
-                setInputVal(inputVal + btnVal);
-            } else if (inputVal === '' && btnVal === '-') {
-                setInputVal(inputVal + btnVal);
-            }
-
-            if (operators.indexOf(lastChar) > -1 && inputVal.length > 1) {
-                setInputVal(inputVal.replace(/.$/, btnVal));
-            }
-
-            setDecimalAdded(false);
-        } else if (btnVal === '.') {
-            if (!decimalAdded) {
-                setInputVal(inputVal + btnVal);
-                setDecimalAdded(true);
-            }
         } else if (btnVal === '√') {
-            if (inputVal) {
+            if (/[0-9]/.test(lastChar)) {
                 const result = Math.sqrt(parseFloat(inputVal));
                 setInputVal(result.toString());
                 setDecimalAdded(false);
             }
-        } else {
-            setInputVal(inputVal + btnVal);
+        } else if (btnVal === '%') {
+            const percentage = 0.01;
+            try {
+                const result = math.evaluate(`(${inputVal}) * ${percentage}`);
+                setInputVal(result.toString());
+            } catch (error) {
+                setInputVal('Error: Invalid input');
+            }
         }
     };
 
     return (
         <div className='calculator' id='calc'>
-            <div className='display' value={inputVal}>
+            <div data-testid='display' className='display' value={inputVal}>
                 {inputVal}
             </div>
             <span onClick={handleClick} className='c neumorphic'>

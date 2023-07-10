@@ -6,6 +6,11 @@ const Calculator = () => {
     const operators = ['+', '-', 'x', '÷'];
     const [decimalAdded, setDecimalAdded] = useState(false);
 
+    const handleResult = (result) => {
+        const formattedResult = Number(result.toPrecision(16));
+        setInputVal(formattedResult);
+    };
+
     const handleKeyDown = (e) => {
         const key = e.key;
 
@@ -59,12 +64,26 @@ const Calculator = () => {
             } catch (error) {
                 console.error('An error occurred:', error);
             }
-            if (typeof equation === 'string' && equation.indexOf('/0') !== -1) {
-                setInputVal('Error: Division by zero');
-                return;
+            if (typeof equation === 'string') {
+                equation = equation.replace(/x/g, '*').replace(/÷/g, '/');
+
+                if (equation.indexOf('/0') !== -1) {
+                    const operands = equation.split('/');
+                    const divisor = parseFloat(operands[1]);
+
+                    if (divisor !== 0) {
+                        const result = parseFloat(operands[0]) / divisor;
+                        setInputVal(result.toString());
+                    } else {
+                        setInputVal('Error: Division by zero');
+                    }
+                    return;
+                }
             }
             if (equation) {
                 setInputVal(math.evaluate(equation.toString()));
+                const result = math.evaluate(equation.toString());
+                handleResult(result);
             }
 
             setDecimalAdded(false);
@@ -108,6 +127,7 @@ const Calculator = () => {
             try {
                 const result = math.evaluate(equation);
                 setInputVal(result.toString());
+                handleResult(result);
             } catch (error) {
                 setInputVal('Error: Invalid input');
             }
